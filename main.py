@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import function
+import requests
 
 app = Flask(__name__)
 
@@ -40,6 +41,23 @@ def buscar_codigo_por_nome(cid_nome):
             return cid['codigo']
     return None
 
+def buscar_informacao_medicamento(nome_medicamento):
+    url = f"https://api.fda.gov/drug/label.json?search={nome_medicamento}&limit=1"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        dados = response.json()
+        if dados['results']:
+            # Extrair algumas informações relevantes
+            info = dados['results'][0]
+            descricao = info.get('description', 'Descrição não disponível.')
+            return f"Informações sobre {nome_medicamento}: {descricao}"
+        else:
+            return "Nenhuma informação encontrada para o medicamento solicitado."
+    else:
+        return None
+
+
 @app.route("/dialogflow", methods=["POST"])
 def dialogflow():
     data = request.get_json()
@@ -48,7 +66,14 @@ def dialogflow():
     intent = data["intentInfo"]["displayName"]
 
     if intent == "Default Welcome Intent":
-        response = format_response(["Olá, sou o assistente virtual VOGM, como posso ajudá-lo?"])
+        response = format_response(["""Olá, sou o assistente virtual VOGM, como posso ajudá-lo? atualmente temos as seguintes funcionalidades
+        1. buscar o nome da doença por CID (ex: CID A01)
+        2. buscar cid pelo nome (ex: colera)
+        3. Listar CID (lista 10 cids)     
+        4. Info sobre a CIX (citizen experience)
+        5. Info sobre a VOGM (Grupo)
+        6. Info sobre o projeto VOGM
+        7. Informação do medicamento"""])
 
     elif intent == "buscar.nome.por.cid":
         cid_codigo = data['sessionInfo']['parameters']['cids']
@@ -92,9 +117,16 @@ def dialogflow():
         Gustavo Candile Monteiro Barbosa
         Matheus Oliveira de Andrade
         """])
-    
     elif intent == "info.projeto":
         response = format_response(["Claro, para saber mais sobre o projeto aqui está um link da apresentação com um video demonstrativo: https://app.decktopus.com/share/Py632j/1"])
+    elif intent == "informacao_medicamento":
+            nome_medicamento = data['sessionInfo']['parameters']['medicamento']  # Supondo que você tenha um parâmetro de medicamento
+            informacao = buscar_informacao_medicamento(nome_medicamento)
+            if informacao:
+                response = format_response([informacao])
+            else:
+                response = format_response([f"Não consegui obter informações sobre o medicamento {nome_medicamento}."])
+
     # Verificando se a requisição foi bem-sucedida
     if response.status_code == 200:
         return response

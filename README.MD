@@ -45,16 +45,19 @@ Install the [ngrok](https://ngrok.com/download) from website
 
 run the main.py
 
-run ngrok command
+Open ngron and run ngrok command
+
 ```
 ngrok htpp 5000
 ```
 
+get the ngrok url and past in the Webhook of Dialogflow CX
+
 
 #### API Reference
 
-```html
-    <p>dummy code</p>
+```
+
 ```
 [Back To The Top](#read-me-template)
 
